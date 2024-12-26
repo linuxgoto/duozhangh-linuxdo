@@ -5,6 +5,8 @@ echo 'export LINUXDO_PASSWORD1="password1"' >> ~/.bashrc
 echo 'export LINUXDO_USERNAME2="username2"' >> ~/.bashrc
 echo 'export LINUXDO_PASSWORD2="password2"' >> ~/.bashrc
 # 继续添加更多账号...
+```
+```
 source ~/.bashrc  # 使更改生效
 ```
 配置文件 config.ini
