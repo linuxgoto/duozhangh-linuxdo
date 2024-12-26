@@ -11,7 +11,6 @@ from datetime import datetime
 from configparser import ConfigParser
 from tabulate import tabulate
 from playwright.sync_api import sync_playwright, TimeoutError
-from config import reply_generator
 
 # 创建一个 StringIO 对象用于捕获日志
 log_stream = io.StringIO()
@@ -43,7 +42,7 @@ logger.addHandler(stream_handler)
 IS_GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ
 IS_SERVER = platform.system() == "Linux" and not IS_GITHUB_ACTIONS
 
-# 从配置文件或环境变量中读取配置信息
+# 从配置文件读取配置信息（如果需要）
 def load_config():
     config = ConfigParser()
     if IS_SERVER:
@@ -59,31 +58,15 @@ def load_config():
 
 config = load_config()
 
-USERNAME = os.getenv("LINUXDO_USERNAME", config.get('credentials', 'username', fallback=None))
-PASSWORD = os.getenv("LINUXDO_PASSWORD", config.get('credentials', 'password', fallback=None))
-LIKE_PROBABILITY = float(os.getenv("LIKE_PROBABILITY", config.get('settings', 'like_probability', fallback='0.02')))
-REPLY_PROBABILITY = float(os.getenv("REPLY_PROBABILITY", config.get('settings', 'reply_probability', fallback='0')))
-COLLECT_PROBABILITY = float(os.getenv("COLLECT_PROBABILITY", config.get('settings', 'collect_probability', fallback='0.02')))
+LIKE_PROBABILITY = float(config.get('settings', 'like_probability', fallback='0.02'))
+REPLY_PROBABILITY = float(config.get('settings', 'reply_probability', fallback='0'))
+COLLECT_PROBABILITY = float(config.get('settings', 'collect_probability', fallback='0.02'))
 HOME_URL = config.get('urls', 'home_url', fallback="https://linux.do/")
 CONNECT_URL = config.get('urls', 'connect_url', fallback="https://connect.linux.do/")
-USE_WXPUSHER = os.getenv("USE_WXPUSHER", config.get('wxpusher', 'use_wxpusher', fallback='false')).lower() == 'true'
-APP_TOKEN = os.getenv("APP_TOKEN", config.get('wxpusher', 'app_token', fallback=None))
-TOPIC_ID = os.getenv("TOPIC_ID", config.get('wxpusher', 'topic_id', fallback=None))
-MAX_TOPICS = int(os.getenv("MAX_TOPICS", config.get('settings', 'max_topics', fallback='10')))
-
-# 检查必要配置
-missing_configs = []
-if not USERNAME:
-    missing_configs.append("USERNAME")
-if not PASSWORD:
-    missing_configs.append("PASSWORD")
-if USE_WXPUSHER and not APP_TOKEN:
-    missing_configs.append("APP_TOKEN")
-if USE_WXPUSHER and not TOPIC_ID:
-    missing_configs.append("TOPIC_ID")
-if missing_configs:
-    logging.error(f"缺少必要配置: {', '.join(missing_configs)}，请在环境变量或配置文件中设置。")
-    exit(1)
+USE_WXPUSHER = config.get('wxpusher', 'use_wxpusher', fallback='false').lower() == 'true'
+APP_TOKEN = config.get('wxpusher', 'app_token', fallback=None)
+TOPIC_ID = config.get('wxpusher', 'topic_id', fallback=None)
+MAX_TOPICS = int(config.get('settings', 'max_topics', fallback='10'))
 
 class LinuxDoBrowser:
     def __init__(self) -> None:
@@ -163,13 +146,16 @@ class LinuxDoBrowser:
             logging.error(f"登出操作失败: {e}")
 
 if __name__ == "__main__":
-    accounts = [
-        ("username1", "password1"),
-        ("username2", "password2"),
-        ("username3", "password3"),
-        ("username4", "password4"),
-        ("username5", "password5"),
-    ]
-
+    accounts = []
+    
+    while True:
+        username = input("请输入用户名（或输入'结束'以停止）：")
+        if username.lower() == '结束':
+            break
+        
+        password = input("请输入密码：")
+        
+        accounts.append((username, password))
+    
     ldb = LinuxDoBrowser()
     ldb.run_for_accounts(accounts)
